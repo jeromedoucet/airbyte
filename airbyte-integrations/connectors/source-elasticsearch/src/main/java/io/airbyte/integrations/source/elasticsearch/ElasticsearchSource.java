@@ -20,12 +20,15 @@ import io.airbyte.protocol.models.AirbyteMessage;
 import io.airbyte.protocol.models.ConfiguredAirbyteCatalog;
 import java.io.IOException;
 import java.util.*;
+import java.util.regex.Pattern;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class ElasticsearchSource extends BaseConnector implements Source {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(ElasticsearchSource.class);
+  private static Pattern LOG_INDEX_REGEX = Pattern.compile("javelo-logs-production-.*");
   private final ObjectMapper mapper = new ObjectMapper();
 
   public static void main(String[] args) throws Exception {
@@ -98,7 +101,7 @@ public class ElasticsearchSource extends BaseConnector implements Source {
         .map(ConfiguredAirbyteStream::getStream)
         .forEach(stream -> {
           AutoCloseableIterator<JsonNode> data = ElasticsearchUtils.getDataIterator(connection, stream);
-          AutoCloseableIterator<AirbyteMessage> messageIterator = ElasticsearchUtils.getMessageIterator(data, stream.getName());
+          AutoCloseableIterator<AirbyteMessage> messageIterator = ElasticsearchUtils.getMessageIterator(data, streamName(stream.getName()));
           iteratorList.add(messageIterator);
         });
     return AutoCloseableIterators
@@ -113,4 +116,10 @@ public class ElasticsearchSource extends BaseConnector implements Source {
     return mapper.convertValue(config, ConnectorConfiguration.class);
   }
 
+  public String streamName(String indexName) {
+    if(LOG_INDEX_REGEX.matcher(indexName).matches()) {
+      return "logs";
+    }
+    return indexName;
+  }
 }

@@ -64,4 +64,31 @@ class ElasticsearchSourcesTest {
     assertEquals(expectedOutput, actualOutput);
   }
 
+  @Test
+  @DisplayName("streamName() doesn't match log index pattern")
+  public void testStreamNameNoMatch() {
+    // given
+    var source = new ElasticsearchSource();
+    var indexName = "someIndexName";
+
+    // when
+    String streamName = source.streamName(indexName);
+
+    // then
+    assertEquals(indexName, streamName);
+  }
+
+  @Test
+  @DisplayName("streamName() match log index pattern")
+  public void testStreamNameMatch() {
+    // given
+    var source = new ElasticsearchSource();
+    var indexName = "javelo-logs-production-2022.10.26";
+
+    // when
+    String streamName = source.streamName(indexName);
+
+    // then
+    assertEquals("logs", streamName);
+  }
 }
